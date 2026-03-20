@@ -15,15 +15,12 @@ This destination is maintained by Matilda. For any issues with the destination, 
 3. Select an existing Source to connect to Matilda.
 4. In Matilda, go to **Workspace Settings > Segment** and create or open your workspace Segment connection.
 5. Copy your Matilda ingest endpoint:
-   - Recommended: `https://api.<stage>.matilda.io/segment-connections/ingest`
-   - Alternate (connection-specific): `https://api.<stage>.matilda.io/segment-connections/{connectionId}/ingest`
-6. Copy both values from Matilda:
-   - **Connection ID** (`connectionId`)
+   - `https://api.<stage>.matilda.io/segment-connections/ingest`
+6. Copy this value from Matilda:
    - **Connection Key** (`writeKey`, used as API key)
 7. In Segment destination settings:
    - Set **Destination endpoint** to the Matilda ingest URL.
    - Set **API Key / Write Key** to the Matilda `writeKey`.
-   - Set **Connection ID** to the Matilda `connectionId`.
 8. Save and enable the destination.
 9. Send a test event from Segment Event Tester and verify it appears in Matilda under **Workspace Settings > Segment > Recent Segment Events**.
 
@@ -35,7 +32,8 @@ The Matilda destination uses the following settings:
 
 - **Destination endpoint** (required): Matilda ingest API endpoint.
 - **API Key / Write Key** (required): Matilda `writeKey` used to authenticate ingest requests.
-- **Connection ID** (required): Matilda `connectionId` used to resolve the workspace connection.
+
+Matilda resolves `connectionId` internally from the provided write key.
 
 ## Supported methods
 
@@ -115,7 +113,7 @@ Matilda ingests Group payloads as `appEvents` for workspace activity visibility.
 For each inbound request, Matilda:
 
 1. Authenticates the request using API key.
-2. Resolves the target workspace Segment connection.
+2. Resolves the target workspace Segment connection using the write key.
 3. Normalizes incoming Segment payloads.
 4. Applies allowed-event filters configured in Matilda.
 5. Stores normalized data in workspace-scoped `appEvents`.
