@@ -17,10 +17,13 @@ This destination is maintained by Matilda. For any issues with the destination, 
 5. Copy your Matilda ingest endpoint:
    - Recommended: `https://api.<stage>.matilda.io/segment-connections/ingest`
    - Alternate (connection-specific): `https://api.<stage>.matilda.io/segment-connections/{connectionId}/ingest`
-6. Copy your Matilda Segment API key from the same settings page.
+6. Copy both values from Matilda:
+   - **Connection ID** (`connectionId`)
+   - **Connection Key** (`writeKey`, used as API key)
 7. In Segment destination settings:
    - Set **Destination endpoint** to the Matilda ingest URL.
-   - Set **API Key** to your Matilda API key.
+   - Set **API Key / Write Key** to the Matilda `writeKey`.
+   - Set **Connection ID** to the Matilda `connectionId`.
 8. Save and enable the destination.
 9. Send a test event from Segment Event Tester and verify it appears in Matilda under **Workspace Settings > Segment > Recent Segment Events**.
 
@@ -31,7 +34,8 @@ Data is typically visible in Matilda within seconds of delivery from Segment.
 The Matilda destination uses the following settings:
 
 - **Destination endpoint** (required): Matilda ingest API endpoint.
-- **API Key** (required): Workspace key used to authenticate ingest requests.
+- **API Key / Write Key** (required): Matilda `writeKey` used to authenticate ingest requests.
+- **Connection ID** (required): Matilda `connectionId` used to resolve the workspace connection.
 
 ## Supported methods
 
@@ -118,4 +122,3 @@ For each inbound request, Matilda:
 6. Marks processing status as `processed`, `skipped`, `unsupported`, or `failed`.
 
 This destination writes to Matilda `appEvents` (activity stream data) and does not directly mutate core CRM entities unless explicitly enabled by future mapping logic.
-
