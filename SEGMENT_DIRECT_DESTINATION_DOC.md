@@ -1,122 +1,141 @@
----
-title: Matilda Destination
----
+# Matilda (Actions) Destination
 
-[Matilda](https://app.matilda.io/?utm_source=segmentio&utm_medium=docs&utm_campaign=partners) helps teams manage workspace activity, CRM workflows, and AI-assisted operations in one place. The Matilda destination ingests Segment events into workspace-scoped `appEvents` so teams can monitor activity and trigger downstream actions.
+## Destination overview
 
-This destination is maintained by Matilda. For any issues with the destination, contact the Matilda Support team at support@matilda.io.
+The Matilda (Actions) destination supports `Identify`, `Group`, and `Track` calls.
+
+- In Segment, this destination appears as `Matilda (Actions)` in the Integrations object.
+- This is a partner-owned destination. For setup or support issues, contact the Matilda support team.
+- This destination is currently in beta.
+
+Matilda helps teams manage customer relationships, coordinate work, and automate workflows with AI-powered agents.
+With this destination, you can use your existing Segment events to create and update records in Matilda.
+For example, an Identify call can create or update a User and connect that user to a Person in Matilda.
 
 ## Getting started
 
-{% include content/connection-modes.md %}
+1. In Segment, open Catalog and select Destinations.
+2. Search for `Matilda (Actions)` and add it as a destination.
+3. Follow the setup steps in Segment.
+4. In Matilda, go to Settings and select Segment from the sidebar.
+5. Copy your API key from Matilda, then paste it into the Matilda (Actions) destination configuration in Segment.
 
-1. From your workspace's [Destination catalog page](https://app.segment.com) search for **Matilda**.
-2. Select **Matilda** and click **Add Destination**.
-3. Select an existing Source to connect to Matilda.
-4. In Matilda, go to **Workspace Settings > Segment** and create or open your workspace Segment connection.
-5. Copy your Matilda ingest endpoint:
-   - `https://api.<stage>.matilda.io/segment-connections/ingest`
-6. Copy this value from Matilda:
-   - **Connection Key** (`writeKey`, used as API key)
-7. In Segment destination settings:
-   - Set **Destination endpoint** to the Matilda ingest URL.
-   - Set **API Key / Write Key** to the Matilda `writeKey`.
-8. Save and enable the destination.
-9. Send a test event from Segment Event Tester and verify it appears in Matilda under **Workspace Settings > Segment > Recent Segment Events**.
+## Identify: create or update users and people
 
-Data is typically visible in Matilda within seconds of delivery from Segment.
+Use Identify calls to create or update a User record in Matilda.
 
-## Destination settings
+When an Identify call includes an email address, Matilda will:
 
-The Matilda destination uses the following settings:
+- create or update the User using that email address
+- look for an existing Person with the same email address
+- link the User to that Person if one exists
+- create a new Person if no matching Person is found
 
-- **Destination endpoint** (required): Matilda ingest API endpoint.
-- **API Key / Write Key** (required): Matilda `writeKey` used to authenticate ingest requests.
+By default, this mapping runs on Identify events.
 
-Matilda resolves `connectionId` internally from the provided write key.
+### Understanding Users and People
 
-## Supported methods
+In Matilda:
 
-Matilda supports the following methods, as specified in the [Segment Spec](https://segment.com/docs/connections/spec/).
+- a Person represents a real human
+- a User represents that person as a user inside your product or SaaS application
 
-### Track
+A single Person can be related to multiple Users.
+For example, the same person may appear in different products, accounts, or workspaces, while still being the same underlying human.
 
-Send [Track](https://segment.com/docs/connections/spec/track/) calls to create or update workspace activity in Matilda. For example:
+### Required fields
 
-```javascript
-analytics.track("contact.created", {
-  name: "Jane Doe",
-  email: "jane@example.com"
-});
-```
+This mapping assumes your Identify call includes:
 
-Matilda ingests Track calls as workspace `appEvents`.
+- an email address, used to create or update the User and match or create the related Person
+- an id, used as the external identifier for the User
 
-Common mapped event names:
+### Additional attributes
 
-- `contact.created`
-- `contact.create`
-- `matilda.contact.created`
-- `company.created`
-- `company.create`
-- `matilda.company.created`
+You can map extra fields from your Segment event to Matilda attributes.
+For example, you might send product-specific properties such as role, plan, status, or permissions as additional attributes on the User or Person.
 
-If an event name is not currently mapped, Matilda stores it as an ingested event with status `unsupported`, which still appears in workspace activity logs for troubleshooting and rollout planning.
+On the Edit Mapping page:
 
-### Identify
+- the left column should contain values from your Segment event, or custom text
+- the right column should contain the Matilda attribute slug or ID you want to map to
 
-Send [Identify](https://segment.com/docs/connections/spec/identify/) calls when you want user context stored alongside activity processing. For example:
+> Info  
+> Every Matilda attribute has both an ID and a slug. You can use either one in this destination.  
+> To find an attribute slug, go to the relevant object settings page, open the Attributes tab, find the attribute, click the ︙ menu, and select Copy slug.
 
-```javascript
-analytics.identify("user-123", {
-  email: "jane@example.com",
-  name: "Jane Doe"
-});
-```
+> Note  
+> By default, the User object includes only a small set of attributes. In most cases, you should create any custom User attributes you need in Matilda before sending Identify calls.
 
-Matilda ingests Identify payloads as `appEvents` and makes them available in activity logs.
+## Group: create or update workspaces and companies
 
-### Page
+Use Group calls to create or update a Workspace record in Matilda.
 
-Send [Page](https://segment.com/docs/connections/spec/page/) calls to capture page-level activity context. For example:
+This mapping uses two keys:
 
-```javascript
-analytics.page("Pricing");
-```
+- `domain` (required)
+- `groupId` or `workspaceId` (optional secondary key)
 
-Matilda ingests Page payloads as `appEvents` for workspace activity visibility.
+When a Group call includes a domain, Matilda will:
 
-### Screen
+- create or update the Workspace/Company record using domain as the primary unique key
+- if `groupId` or `workspaceId` is present, use it as a secondary key for better matching
+- link or update the related company/workspace record
 
-Send [Screen](https://segment.com/docs/connections/spec/screen/) calls from mobile flows to capture screen-level context. For example:
+If no domain is included, Matilda ignores workspace/company create or update for that Group event.
 
-```javascript
-analytics.screen("Home");
-```
+By default, this mapping runs on Group events.
 
-Matilda ingests Screen payloads as `appEvents` for workspace activity visibility.
+### Understanding Workspaces and Companies
 
-### Group
+In Matilda:
 
-Send [Group](https://segment.com/docs/connections/spec/group/) calls to associate users with workspace/account context. For example:
+- a Company represents a real company
+- a Workspace represents a workspace, tenant, account, or group inside your product
 
-```javascript
-analytics.group("workspace-456", {
-  name: "Acme Inc"
-});
-```
+A Company can be related to multiple Workspaces, and a Workspace can be associated with the Company that it belongs to.
 
-Matilda ingests Group payloads as `appEvents` for workspace activity visibility.
+### Required and optional fields
 
-## How Matilda processes events
+This mapping assumes your Group call includes:
 
-For each inbound request, Matilda:
+- a required domain, used to match or create the company/workspace record
+- an optional id (`groupId` or `workspaceId`) used as a secondary unique key
 
-1. Authenticates the request using API key.
-2. Resolves the target workspace Segment connection using the write key.
-3. Normalizes incoming Segment payloads.
-4. Applies allowed-event filters configured in Matilda.
-5. Stores normalized data in workspace-scoped `appEvents`.
-6. Marks processing status as `processed`, `skipped`, `unsupported`, or `failed`.
+### Additional attributes
 
-This destination writes to Matilda `appEvents` (activity stream data) and does not directly mutate core CRM entities unless explicitly enabled by future mapping logic.
+You can also map extra event properties to Workspace or Company attributes.
+For example, you might send fields like billing plan, workspace size, lifecycle stage, region, or account owner as additional attributes.
+
+On the Edit Mapping page:
+
+- the left column should contain values from your Segment event, or custom text
+- the right column should contain the Matilda attribute slug or ID you want to map to
+
+> Info  
+> Every Matilda attribute has both an ID and a slug. You can use either one in this destination.  
+> To find an attribute slug, go to the relevant object settings page, open the Attributes tab, find the attribute, click the ︙ menu, and select Copy slug.
+
+> Note  
+> By default, the Workspace object includes only a limited set of attributes. You will usually want to create your own custom Workspace attributes in Matilda before sending Group calls.
+
+## Track support
+
+The destination accepts Track calls and can map attributes for downstream activity and enrichment flows.
+Use Identify and Group as the primary create/update flows for user/person and workspace/company entities.
+
+## Data model summary
+
+Matilda separates real-world entities from product-specific entities:
+
+- People and Companies represent real people and real companies
+- Users and Workspaces represent those entities inside your product or connected SaaS apps
+
+Because of this model:
+
+- one Person can be linked to many Users
+- one Company can be linked to many Workspaces
+- users and workspaces can carry product-specific attributes
+- people and companies can act as the shared real-world records behind them
+
+This structure makes it easier to unify customer data across products, workspaces, and accounts.
